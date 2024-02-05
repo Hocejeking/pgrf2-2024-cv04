@@ -1,6 +1,7 @@
 package control;
 
 import raster.Raster;
+import transforms.Col;
 import view.Panel;
 
 import java.awt.event.*;
@@ -15,8 +16,8 @@ public class Controller3D implements Controller {
         redraw();
     }
 
-    public void initObjects(Raster raster) {
-        raster.setClearColor(0x101010);
+    public void initObjects(Raster<Col> raster) {
+        raster.setDefaultValue(new Col(0x101010));
     }
 
     @Override
@@ -33,7 +34,10 @@ public class Controller3D implements Controller {
     private void redraw() {
         panel.clear();
 
-        panel.getRaster().setPixel(panel.getWidth() / 2, panel.getHeight() / 2, 0xff0000);
+        panel.getRaster().setValue(
+                panel.getWidth() / 2, panel.getHeight() / 2,
+                new Col(0xff0000)
+        );
 
         panel.repaint();
     }
