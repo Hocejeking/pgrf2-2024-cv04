@@ -1,7 +1,10 @@
 package control;
 
+import Zbuffer.ZBuffer;
 import raster.Raster;
+import raster.TriangleRasterizer;
 import transforms.Col;
+import transforms.Point3D;
 import view.Panel;
 
 import java.awt.event.*;
@@ -34,11 +37,14 @@ public class Controller3D implements Controller {
     private void redraw() {
         panel.clear();
 
-        panel.getRaster().setValue(
-                panel.getWidth() / 2, panel.getHeight() / 2,
-                new Col(0xff0000)
-        );
-
+        ZBuffer bf = new ZBuffer(panel.getRaster());
+        TriangleRasterizer tr = new TriangleRasterizer(bf);
+        tr.rasterize(
+                new Point3D(400,1, 0.5d),
+                new Point3D(1, 300, 0.5d),
+                new Point3D(500,500,0.5d),
+                new Col(255,0,0)
+                );
         panel.repaint();
     }
 }

@@ -56,5 +56,9 @@ public class ImageBuffer implements Raster<Col> {
         return img.getHeight();
     }
 
+    public BufferedImage getImg(){
+        return img;
+    }
+
 }
 
