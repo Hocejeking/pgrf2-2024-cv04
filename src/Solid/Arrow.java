@@ -19,7 +19,7 @@ public class Arrow extends Solid {
         indexBuffer.add(1);
         indexBuffer.add(2);
         indexBuffer.add(3);
-        partBuffer.add(new Part(0,2,TopologyType.TRIANGLE_STRIP));
+        partBuffer.add(new Part(0,2,TopologyType.TRIANGLES));
         partBuffer.add(new Part(2,1,TopologyType.LINES));
     }
 }

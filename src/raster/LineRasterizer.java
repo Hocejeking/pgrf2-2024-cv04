@@ -1,180 +1,79 @@
 package raster;
 
-import Solid.Solid;
 import Solid.Vertex;
 import Zbuffer.ZBuffer;
-import transforms.*;
-import java.util.ArrayList;
-import java.util.List;
+import transforms.Point3D;
+import transforms.Vec3D;
+
 import java.util.Optional;
 
 import static java.lang.Math.abs;
 
 
-public class LineRasterizer {
+public class LineRasterizer implements Rasterizer {
     private final ZBuffer zb;
-    private Mat4 modelMatrix = new Mat4Identity() ;
-    private Mat4 viewMatrix = new Mat4Identity();
-    private Mat4 projectionMatrix = new Mat4Identity();
     public LineRasterizer(ZBuffer zb){
         this.zb = zb;
     }
-    private double wmin = 0.1;
 
-    public void rasterize(Point3D a, Point3D b, Col color){
-        if (a.getW() < b.getW()) {Point3D x = a; a = b; b = x; }
-        if (a.getW() < wmin)
-            return;
-        if (b.getW() < wmin) {
-            double t = (a.getW() -wmin)/(a.getW() - b.getW());
-            a = a.mul(1-t).add(b.mul(t));
-        }
+    public void rasterize(Vertex a, Vertex b){
+        Optional<Vec3D> dA = a.getPosition().dehomog();
+        Optional<Vec3D> dB = b.getPosition().dehomog();
+        a = new Vertex(transformToWindow(new Point3D(dA.get())),a.getColor());
+        b = new Vertex(transformToWindow(new Point3D(dB.get())),b.getColor());
 
-        Optional<Vec3D> vA = a.dehomog();
-        Optional<Vec3D> vB = b.dehomog();
+        int aX = (int) Math.round(a.getPosition().getX());
+        int aY = (int) Math.round(a.getPosition().getY());
 
-        Optional<Vec3D> corVA = Optional.ofNullable(vA.get().withX(0.5 * (zb.getImageBuffer().getWidth() - 1) * (vA.get().getX() + 1)))
-                .map(vec -> vec.withY(0.5 * (zb.getImageBuffer().getHeight() - 1) * (1 - vec.getY())));
+        int bX = (int) Math.round(b.getPosition().getX());
+        int bY = (int) Math.round(b.getPosition().getY());
 
-        Optional<Vec3D> corVB = Optional.ofNullable(vB.get().withX(0.5 * (zb.getImageBuffer().getWidth() - 1) * (vB.get().getX() + 1)))
-                .map(vec -> vec.withY(0.5 * (zb.getImageBuffer().getHeight() - 1) * (1 - vec.getY())));
+        var dy = bY - aY;
+        var dx = bX - aX;
 
-        //drawLine3D(new Point3D( vA.get().getX(), vA.get().getY(), vA.get().getZ()), new Point3D( vB.get().getX(), vB.get().getY(), vB.get().getZ()), color);
-        drawLine3D(new Point3D( corVA.get().getX(), corVA.get().getY(), corVA.get().getZ()), new Point3D( corVB.get().getX(), corVB.get().getY(), corVB.get().getZ()), color);
-    }
-    public void draw(Solid s, Col barva) {
-        ArrayList<Vertex> vertexList = s.getVertexBuffer();
-        List<Vertex> transformedVertices = new ArrayList<>();
-        modelMatrix = modelMatrix.mul(new Mat4Scale(1, 1, 1));
-        modelMatrix = modelMatrix.mul(new Mat4Transl(0, 0, 0));
-
-        Mat4 finalMatrix = modelMatrix.mul(viewMatrix.mul(projectionMatrix));
-
-        for (Vertex v : vertexList) {
-            Vertex a = new Vertex(v.getPosition().mul(finalMatrix),v.getColor()); //chyba zde
-            transformedVertices.add(a);
-        }
-
-        for (int i = 0; i < s.getIndexBuffer().size() - 1; i += 2) {
-
-            int indexA = s.getIndexBuffer().get(i);
-            int indexB = s.getIndexBuffer().get(i + 1);
-
-            Vertex point3DA = transformedVertices.get(indexA);
-            Vertex point3DB = transformedVertices.get(indexB);
-
-            rasterize(point3DA.getPosition(), point3DB.getPosition(), barva);
-        }
-    }
-
-    public void drawLine3D(Point3D a, Point3D b, Col color) {
-        // Převedení souřadnic bodů na celočíselné hodnoty
-        int x1 = (int) a.getX();
-        int y1 = (int) a.getY();
-        double z1 = a.getZ();
-        int x2 = (int) b.getX();
-        int y2 = (int) b.getY();
-        double z2 = b.getZ();
-
-        // Inicializace seznamu bodů
-        List<Point3D> points = new ArrayList<>();
-        points.add(new Point3D(x1, y1, z1));
-
-        // Výpočet rozdílů v osách
-        int dx = Math.abs(x2 - x1);
-        int dy = Math.abs(y2 - y1);
-        double dz = Math.abs(z2 - z1);
-
-        // Určení směru v osách
-        int xs = (x2 > x1) ? 1 : -1;
-        int ys = (y2 > y1) ? 1 : -1;
-        int zs = (z2 > z1) ? 1 : -1;
-
-        // Určení hlavní osy podle rozdílů
-        if (dx >= dy && dx >= dz) {
-            // Bresenhamův algoritmus pro X-osu
-            int p1 = 2 * dy - dx;
-            double p2 = 2 * dz - dx;
-            while (x1 != x2) {
-                x1 += xs;
-                if (p1 >= 0) {
-                    y1 += ys;
-                    p1 -= 2 * dx;
-                }
-                if (p2 >= 0) {
-                    z1 += zs;
-                    p2 -= 2 * dx;
-                }
-                p1 += 2 * dy;
-                p2 += 2 * dz;
-                points.add(new Point3D(x1, y1, z1));
+        if(Math.abs(dy) < Math.abs(dx)){
+            if (bX < aX) {
+                Vertex temp = a;
+                a = b;
+                b = temp;
             }
-        } else if (dy >= dx && dy >= dz) {
-            // Bresenhamův algoritmus pro Y-osu
-            int p1 = 2 * dx - dy;
-            double p2 = 2 * dz - dy;
-            while (y1 != y2) {
-                y1 += ys;
-                if (p1 >= 0) {
-                    x1 += xs;
-                    p1 -= 2 * dy;
-                }
-                if (p2 >= 0) {
-                    z1 += zs;
-                    p2 -= 2 * dy;
-                }
-                p1 += 2 * dx;
-                p2 += 2 * dz;
-                points.add(new Point3D(x1, y1, z1));
+
+            for (int x = Math.max(0, (int) a.getPosition().getX() + 1); x <= Math.min(zb.getImageBuffer().getWidth() - 1, b.getPosition().getX()); x++) {
+                double t1 = (x - a.getPosition().getX()) / (b.getPosition().getX() - a.getPosition().getX());
+                Vertex d = a.mul(1 - t1).add(b.mul(t1));
+
+                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), d.getColor());
             }
-        } else {
-            // Bresenhamův algoritmus pro Z-osu
-            double p1 = 2 * dy - dz;
-            double p2 = 2 * dx - dz;
-            while (z1 != z2) {
-                z1 += zs;
-                if (p1 >= 0) {
-                    y1 += ys;
-                    p1 -= 2 * dz;
-                }
-                if (p2 >= 0) {
-                    x1 += xs;
-                    p2 -= 2 * dz;
-                }
-                p1 += 2 * dy;
-                p2 += 2 * dx;
-                points.add(new Point3D(x1, y1, z1));
+        }
+        else{
+            if (bY < aY) {
+                Vertex temp = a;
+                a = b;
+                b = temp;
+            }
+            for (int y = Math.max(0, (int) a.getPosition().getY() + 1); y <= Math.min(zb.getImageBuffer().getHeight() - 1, b.getPosition().getY()); y++) {
+                double t1 = (y - a.getPosition().getY()) / (b.getPosition().getY() - a.getPosition().getY());
+                Vertex d = a.mul(1 - t1).add(b.mul(t1));
+                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), d.getColor());
             }
         }
 
-        // Vykreslení bodů na zadaných souřadnicích s kontrolou z-bufferu
-        for (Point3D p: points) {
-            zb.setPixelWithZTest((int) p.getX(), (int) p.getY(), p.getZ(), color);
-        }
     }
 
+    @Override
+    public Point3D transformToWindow(Point3D pos) {
+        // Reflect the Y-axis to make positive Y go downwards
+        double newX = pos.getX();
+        double newY = -pos.getY();
 
-    public Mat4 getModelMatrix() {
-        return modelMatrix;
-    }
+        // Shift the origin to the top-left corner
+        newX += 1; // Shift X by 1 to the right
+        newY += 1; // Shift Y by 1 downwards
 
-    public void setModelMatrix(Mat4 modelMatrix) {
-        this.modelMatrix = modelMatrix;
-    }
+        // Scale the coordinates to fit within the window
+        newX *= zb.getImageBuffer().getWidth() / 2.0; // Scale X to half the width of the window
+        newY *= zb.getImageBuffer().getHeight() / 2.0; // Scale Y to half the height of the window
 
-    public Mat4 getViewMatrix() {
-        return viewMatrix;
-    }
-
-    public void setViewMatrix(Mat4 viewMatrix) {
-        this.viewMatrix = viewMatrix;
-    }
-
-    public Mat4 getProjectionMatrix() {
-        return projectionMatrix;
-    }
-
-    public void setProjectionMatrix(Mat4 projectionMatrix) {
-        this.projectionMatrix = projectionMatrix;
+        return new Point3D(newX, newY, pos.getZ());
     }
 }

@@ -4,8 +4,10 @@ import Solid.*;
 import Zbuffer.ZBuffer;
 import raster.LineRasterizer;
 import raster.TriangleRasterizer;
+import transforms.Col;
 import transforms.Mat4;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,12 +28,89 @@ public class Render {
         this.projecMat4 = projecMat4;
     }
 
-    private void SortTriangle(Vertex a, Vertex b, Vertex c){
-        Vertex aTrans = new Vertex(a.getPosition().mul(modelMat).mul(view).mul(projecMat4), a.getColor());
-        Vertex bTrans = new Vertex(b.getPosition().mul(modelMat).mul(view).mul(projecMat4), b.getColor());
-        Vertex cTrans = new Vertex(c.getPosition().mul(modelMat).mul(view).mul(projecMat4), c.getColor());
-        if(checkTriangleOutOfBounds(aTrans,bTrans,cTrans))
+    private void SortAxisLine(Vertex a, Vertex b){
+        a = new Vertex(a.getPosition().mul(view).mul(projecMat4), a.getColor());
+        b = new Vertex(b.getPosition().mul(view).mul(projecMat4), b.getColor());
+        if(checkAxisOutOfBounds(a,b))
             return;
+        if(a.getPosition().getZ() <b.getPosition().getZ()){
+            Vertex temp = a;
+            a = b;
+            b = temp;
+        }
+        boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0;
+        if(vertexBehindNearPlane){
+            boolean aBehind = a.getPosition().getZ()<0;
+            boolean bBehind = b.getPosition().getZ()<0;
+            if(aBehind){
+                return;
+            }else{
+                double t1 = (0 - a.getPosition().getZ()) / (b.getPosition().getZ() - a.getPosition().getZ());
+                Vertex ab = a.mul(1 - t1).add(b.mul(t1));
+                lineRasterizer.rasterize(a,ab);
+            }
+        }
+        else{
+            lineRasterizer.rasterize(a,b);
+        }
+    }
+
+    private void SortTriangle(Vertex a, Vertex b, Vertex c){
+        a = new Vertex(a.getPosition().mul(modelMat).mul(view).mul(projecMat4), a.getColor());
+        b = new Vertex(b.getPosition().mul(modelMat).mul(view).mul(projecMat4), b.getColor());
+        c = new Vertex(c.getPosition().mul(modelMat).mul(view).mul(projecMat4), c.getColor());
+        if(checkTriangleOutOfBounds(a,b,c))
+            return;
+
+        //je potřeba saeřadit strany podle z.
+        if (a.getPosition().getZ() < b.getPosition().getZ()) {
+            Vertex temp = a;
+            a = b;
+            b = temp;
+        }
+        if (b.getPosition().getZ() < c.getPosition().getZ()) {
+            Vertex temp = b;
+            b = c;
+            c = temp;
+        }
+        if (a.getPosition().getZ() < b.getPosition().getZ()) {
+            Vertex temp = a;
+            a = b;
+            b = temp;
+        }
+        boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0 || c.getPosition().getZ() < 0;
+
+        if (vertexBehindNearPlane) {
+            // Determine which vertices are behind the near plane
+            boolean aBehind = a.getPosition().getZ() < 0;
+            boolean bBehind = b.getPosition().getZ() < 0;
+            boolean cBehind = c.getPosition().getZ() < 0;
+
+            if (aBehind && !bBehind && !cBehind) {
+                // jsou videt b + c
+                double t1 = (0 - a.getPosition().getZ()) / (b.getPosition().getZ() - a.getPosition().getZ());
+                Vertex ab = a.mul(1 - t1).add(b.mul(t1));
+
+                double t2 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
+                Vertex ac = a.mul(1 - t2).add(c.mul(t2));
+                triangleRasterizer.rasterize(a,ab,ac);
+            } else if (!aBehind && bBehind && !cBehind) {
+                // jsou videt a + c
+                double t1 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
+                Vertex ac = a.mul(1 - t1).add(c.mul(t1));
+
+                double t2 = -b.getPosition().getZ() / (c.getPosition().getZ() - b.getPosition().getZ());
+                Vertex bc = b.mul(1 - t2).add(c.mul(t2));
+                triangleRasterizer.rasterize(a,b,bc);
+                triangleRasterizer.rasterize(a,ac,bc);
+            } else {
+                System.out.println("unable to render");
+                //nemuzeme rendrovat jelikoz 2 hrany nejsou viditelne
+            }
+        } else {
+            //ve je videt
+            triangleRasterizer.rasterize(a,b,c);
+        }
     }
 
     private boolean checkTriangleOutOfBounds(Vertex a, Vertex b, Vertex c){
@@ -51,12 +130,29 @@ public class Render {
         }
     }
 
+    private boolean checkAxisOutOfBounds(Vertex a, Vertex b){
+        boolean AxisOutOfRightBounds = a.getPosition().getX() > a.getPosition().getW() && b.getPosition().getX() > b.getPosition().getW();
+        boolean AxisOutOfLeftBounds = a.getPosition().getX() < -a.getPosition().getW() && b.getPosition().getX() < -b.getPosition().getW();
+        boolean AxisOutOfTopBounds = a.getPosition().getY() > a.getPosition().getW() && b.getPosition().getY() > b.getPosition().getW();
+        boolean AxisOutOfDownBounds = a.getPosition().getY() < -a.getPosition().getW() && b.getPosition().getY() < -b.getPosition().getW();
+        boolean AxisOutOfFrontBounds = a.getPosition().getZ() > a.getPosition().getW() && b.getPosition().getZ() > b.getPosition().getW();
+        boolean AxisOutOfBackBounds = a.getPosition().getZ() < 0 && b.getPosition().getZ() < 0;
+
+        if(AxisOutOfRightBounds || AxisOutOfLeftBounds || AxisOutOfTopBounds || AxisOutOfDownBounds || AxisOutOfFrontBounds || AxisOutOfBackBounds){
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public void draw(ArrayList<Solid> solids){
         for(Solid s : solids){
             for(Part p : s.getPartBuffer()){
                 TopologyType topT = p.getType();
                 switch (topT) {
-                    case TRIANGLES: // Trojúhelníková topologie
+                    case TRIANGLES:
                         // Procházíme všechny trojúhelníky v části
                         IntStream.range(0, p.getCount())
                                 .mapToObj(i -> Arrays.asList(3 * i, 3 * i + 1, 3 * i + 2))
@@ -66,10 +162,14 @@ public class Render {
                                                  s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(1))),
                                                  s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(2))));
                                 });
-                        break;
-                    case LINE:
                     case AXIS:
-                        break;
+                        IntStream.range(0, p.getCount())
+                                .mapToObj(i -> Arrays.asList(2 * i, 2 * i + 1))
+                                .forEach(indices -> {
+                                    // Determine whether to draw the line or not
+                                    SortAxisLine(s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(0))),
+                                            s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(1))));
+                                });
                 }
             }
         }

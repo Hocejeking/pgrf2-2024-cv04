@@ -2,21 +2,18 @@ package control;
 
 import Solid.*;
 import Zbuffer.ZBuffer;
-import raster.LineRasterizer;
 import raster.Raster;
-import raster.TriangleRasterizer;
 import transforms.*;
 import view.Panel;
 import view.Render;
 
-import javax.swing.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.List;
 
 public class Controller3D implements Controller {
     private final Panel panel;
     private Camera cam;
+    final double krok_kamery = 0.1;
     private final ArrayList<Solid> sceneBuff = new ArrayList<>();
     private Mat4 modelMat;
     private Mat4 projecMat4;
@@ -38,7 +35,8 @@ public class Controller3D implements Controller {
 
     //pridam objekty do sceny
     public void initScene(){
-        sceneBuff.add(new Arrow());
+        //sceneBuff.add(new Triangle());
+        sceneBuff.add(new Axis());
     }
 
     public void prepZBuff(){
@@ -81,28 +79,67 @@ public class Controller3D implements Controller {
                 initObjects(panel.getRaster());
             }
         });
+        MouseAdapter cameraListener = new MouseAdapter() {
+            int x = -1, y = -1;
+            boolean move = false;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON1)
+                    move = true;
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                x = y = -1;
+                move = false;
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (move) {
+                    if (x != -1 && y != -1) {
+                        double daz = (e.getX() - x) / 300.0;
+                        double dze = (e.getY() - y) / 300.0;
+                        cam = cam.addAzimuth(daz);
+                        cam = cam.addZenith(dze);
+                        show();
+                    }
+                    x = e.getX();
+                    y = e.getY();
+                }
+            }
+        };
+        panel.addMouseListener(cameraListener);
+        panel.addMouseMotionListener(cameraListener);
+        panel.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+
+                if (key == KeyEvent.VK_UP) {
+                    cam = cam.forward(krok_kamery);
+                }
+                if (key == KeyEvent.VK_DOWN) {
+                    cam = cam.backward(krok_kamery);
+                }
+                if (key == KeyEvent.VK_LEFT) {
+                    cam = cam.left(krok_kamery);
+                }
+                if (key == KeyEvent.VK_RIGHT) {
+                    cam = cam.right(krok_kamery);
+                }
+
+                show();
+            }
+        });
     }
 
     private void show() {
         panel.clear();
+        bf.clear();
         render = new Render(bf,modelMat,cam.getViewMatrix(),projecMat4);
         render.draw(sceneBuff);
         panel.repaint();
     }
 }
-
- /*lr.draw(new TestLine(), new Col(0,255,0));
-        lr.draw(new Line(),new Col(255,0,0));
-        lr.draw(new Arrow(),new Col(255,255,0));
-        tr.rasterize(
-                new Vertex( new Point3D(400,0, 0.5), new Col(255,0,0)),
-                new Vertex(new Point3D(0, 300, 0.5), new Col(255,0,0)),
-                new Vertex(new Point3D(799,599,0.5), new Col(255,0,0)),
-                new Col(255,0,0)
-                );
-        tr.rasterize(
-                new Vertex(new Point3D(500,0,0.3), new Col(0,255,0)),
-                new Vertex(new Point3D(0,350,0.7),new Col(0,255,0)),
-                new Vertex(new Point3D(400,599,0.7),new Col(0,255,0)),
-                new Col(0,255,0)
-        );*/
