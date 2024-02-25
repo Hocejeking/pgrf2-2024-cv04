@@ -24,10 +24,13 @@ public class TriangleRasterizer {
         int cX = (int) Math.round(c.getPosition().getX());
         int cY = (int) Math.round(c.getPosition().getY());
         double cZ = b.getPosition().getZ();
-
-        zb.getImageBuffer().getImg().getGraphics().drawLine(aX,aY,bX,bY);
-        zb.getImageBuffer().getImg().getGraphics().drawLine(bX,bY,cX,cY);
-        zb.getImageBuffer().getImg().getGraphics().drawLine(aX,aY,cX,cY);
+        LineRasterizer lr = new LineRasterizer(zb);
+        //lr.drawLine3D(new Point3D(aX,aY,aZ), new Point3D(bX,bY,bZ), color);
+        //lr.drawLine3D(new Point3D(bX,bY,bZ), new Point3D(cX,cY,cZ), color);
+        //lr.drawLine3D(new Point3D(aX,aY,aZ), new Point3D(cX,cY,cZ), color);
+        //zb.getImageBuffer().getImg().getGraphics().drawLine(aX,aY,bX,bY);
+        //zb.getImageBuffer().getImg().getGraphics().drawLine(bX,bY,cX,cY);
+        //zb.getImageBuffer().getImg().getGraphics().drawLine(aX,aY,cX,cY);
 
         if(bY < aY) //pokud B je menší jak A
         {
@@ -70,23 +73,22 @@ public class TriangleRasterizer {
         for(int y = aY; y <=bY; y++){
             //hrana AB
             double tAB = (y - aY) / (double) (bY - aY);
-            int x1 =(int)Math.round ((1 - tAB) * aX + tAB * bX);
-            double z1 = (1-tAB) * aZ + tAB * bZ;
-
             Vertex vAB = a.mul(1-tAB).add(b.mul(tAB));
-
+            int x1 =(int) vAB.getPosition().getX();
+            double z1 = vAB.getPosition().getZ();
             //hrana AC
             double tAC = (y-aY)/(double)(cY-aY);
-
-            int x2 = (int)Math.round ((1 - tAC) * aX + tAC * cX);
-            double z2 = (1-tAC) * aZ + tAC * cZ;
-
             Vertex vAC = a.mul(1-tAC).add(c.mul(tAC));
+            int x2 =(int) vAC.getPosition().getX();
+            double z2 = vAC.getPosition().getZ();
+
+
+
             //Triangle vs Triangle-strip
             for(int x = x1; x <= x2; x++){
                 double tZ = (x - x1) / (double) (x2-x1);
                 double z = (1-tZ) * z1 + tZ * z2;
-                zb.setPixelWithZTest(x,y,z, color);
+                zb.setPixelWithZTest(x,y,z, vAB.getColor());
             }
         }
         //zobrazovaci retezec, souradnice, kamery, Java, Rasterizace trojuhelniku, interpolace, zbuffer, Vertex, part buffer.
@@ -95,12 +97,14 @@ public class TriangleRasterizer {
         for(int y = bY; y <= cY; y++) {
             //hrana BC
             double tBC = (y - bY) / (double) (cY - bY);
-            int x1 = (int) Math.round((1 - tBC) * bX + tBC * cX);
-            double z1 = (1-tBC) * bZ + tBC * cZ;
+            Vertex vBC = b.mul(1-tBC).add(c.mul(tBC));
+            int x1 = (int) vBC.getPosition().getX();
+            double z1 = vBC.getPosition().getZ();
             //hrana AC
             double tAC = (y - aY) / (double) (cY - aY);
-            int x2 = (int) Math.round((1 - tAC) * aX + tAC * cX);
-            double z2 = (1-tAC) * aZ + tAC * cZ;
+            Vertex vAC = a.mul(1-tAC).add(c.mul(tAC));
+            int x2 = (int) vAC.getPosition().getX();
+            double z2 = vAC.getPosition().getZ();
 
             if (x1 > x2) {
                 int tempX = x1;
@@ -110,8 +114,8 @@ public class TriangleRasterizer {
 
             for (int x = x1; x <= x2; x++) {
                 double tZ = (x - x1) / (double) (x2-x1);
-                double z = (1-tZ) * z1 + tZ * z2;
-                zb.setPixelWithZTest(x, y, z, color);
+                double z = (1 - tZ) * z1 + tZ * z2;
+                zb.setPixelWithZTest(x, y, z, vAC.getColor());
             }
         }
     }

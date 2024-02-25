@@ -1,7 +1,9 @@
 package Solid;
 
 import transforms.Col;
+import transforms.Mat4;
 import transforms.Point3D;
+import transforms.Vec3D;
 
 public class Vertex implements Vectorizable<Vertex> {
     private final Point3D position;
@@ -22,15 +24,18 @@ public class Vertex implements Vectorizable<Vertex> {
         return color;
     }
 
-    @Override
-    public Vertex mul(double k) {
-        //TODO: implementovat, vynásobím vše skalárem
-        return null;
+    public Vertex mul(double t) {
+        // Násobení pozice a barvy vrcholu skalárem
+        Point3D newPosition = position.mul(t);
+        Col newColor = color.mul(t);
+        return new Vertex(newPosition, newColor);
     }
 
     @Override
     public Vertex add(Vertex v) {
-        //TODO: přidám vše ke všemu
-        return null;
+        // Sčítání pozice a barvy vrcholů
+        Point3D newPosition = position.add(v.getPosition());
+        Col newColor = color.add(v.getColor());
+        return new Vertex(newPosition, newColor);
     }
 }
