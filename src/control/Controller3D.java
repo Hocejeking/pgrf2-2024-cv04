@@ -35,8 +35,9 @@ public class Controller3D implements Controller {
 
     //pridam objekty do sceny
     public void initScene(){
-        //sceneBuff.add(new Triangle());
+        sceneBuff.add(new Triangle());
         sceneBuff.add(new Axis());
+        sceneBuff.add(new Arrow());
     }
 
     public void prepZBuff(){
@@ -47,7 +48,7 @@ public class Controller3D implements Controller {
 
         modelMat = new Mat4Identity();
 
-        Vec3D e = new Vec3D(5, -10, 5);
+        Vec3D e = new Vec3D(10, -15, 5);
         double azimuth = Math.toRadians(100);
         double zenith = Math.toRadians(-15);
         cam = createCamera(e, azimuth, zenith);
@@ -129,6 +130,10 @@ public class Controller3D implements Controller {
                 if (key == KeyEvent.VK_RIGHT) {
                     cam = cam.right(krok_kamery);
                 }
+                if (key == KeyEvent.VK_F){
+                    System.out.println("switching");
+                    projecMat4 = new Mat4PerspRH(Math.PI / 3, (float )bf.getImageBuffer().getHeight() / bf.getImageBuffer().getWidth(), 0.5, 30);
+                }
 
                 show();
             }
@@ -138,7 +143,9 @@ public class Controller3D implements Controller {
     private void show() {
         panel.clear();
         bf.clear();
-        render = new Render(bf,modelMat,cam.getViewMatrix(),projecMat4);
+        bf.getImageBuffer().clear();
+        render = new Render(bf, modelMat,cam.getViewMatrix(),projecMat4);
+        render.clear();
         render.draw(sceneBuff);
         panel.repaint();
     }

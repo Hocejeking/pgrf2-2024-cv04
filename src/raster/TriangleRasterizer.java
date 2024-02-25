@@ -19,9 +19,9 @@ public class TriangleRasterizer implements Rasterizer {
         Optional<Vec3D> dA = a.getPosition().dehomog();
         Optional<Vec3D> dB = b.getPosition().dehomog();
         Optional<Vec3D> dC = c.getPosition().dehomog();
-        a = new Vertex(transformToWindow(new Point3D(dA.get())),a.getColor());
-        b = new Vertex(transformToWindow(new Point3D(dB.get())),b.getColor());
-        c = new Vertex(transformToWindow(new Point3D(dC.get())),c.getColor());
+        a = new Vertex(new Point3D(transformToWindow(new Point3D(dA.get()))),a.getColor());
+        b = new Vertex(new Point3D(transformToWindow(new Point3D(dB.get()))),b.getColor());
+        c = new Vertex(new Point3D(transformToWindow(new Point3D(dC.get()))),c.getColor());
 
         int aX = (int) Math.round(a.getPosition().getX());
         int aY = (int) Math.round(a.getPosition().getY());
@@ -126,19 +126,10 @@ public class TriangleRasterizer implements Rasterizer {
     }
 
     @Override
-    public Point3D transformToWindow(Point3D pos) {
-        // Reflect the Y-axis to make positive Y go downwards
-        double newX = pos.getX();
-        double newY = -pos.getY();
-
-        // Shift the origin to the top-left corner
-        newX += 1; // Shift X by 1 to the right
-        newY += 1; // Shift Y by 1 downwards
-
-        // Scale the coordinates to fit within the window
-        newX *= zb.getImageBuffer().getWidth() / 2.0; // Scale X to half the width of the window
-        newY *= zb.getImageBuffer().getHeight() / 2.0; // Scale Y to half the height of the window
-
-        return new Point3D(newX, newY, pos.getZ());
+    public Vec3D transformToWindow(Point3D pos) {
+        return new Vec3D(pos)
+                .mul(new Vec3D(1, -1, 1))
+                .add(new Vec3D(1, 1, 0))
+                .mul(new Vec3D(zb.getImageBuffer().getWidth() / 2f, zb.getImageBuffer().getHeight() / 2f, 1));
     }
 }

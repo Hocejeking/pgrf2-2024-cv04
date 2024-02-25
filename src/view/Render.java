@@ -41,7 +41,6 @@ public class Render {
         boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0;
         if(vertexBehindNearPlane){
             boolean aBehind = a.getPosition().getZ()<0;
-            boolean bBehind = b.getPosition().getZ()<0;
             if(aBehind){
                 return;
             }else{
@@ -81,29 +80,28 @@ public class Render {
         boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0 || c.getPosition().getZ() < 0;
 
         if (vertexBehindNearPlane) {
-            // Determine which vertices are behind the near plane
             boolean aBehind = a.getPosition().getZ() < 0;
             boolean bBehind = b.getPosition().getZ() < 0;
             boolean cBehind = c.getPosition().getZ() < 0;
 
-            if (aBehind && !bBehind && !cBehind) {
+            if (bBehind) {
                 // jsou videt b + c
                 double t1 = (0 - a.getPosition().getZ()) / (b.getPosition().getZ() - a.getPosition().getZ());
-                Vertex ab = a.mul(1 - t1).add(b.mul(t1));
+                Vertex tAB = a.mul(1 - t1).add(b.mul(t1));
 
                 double t2 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
-                Vertex ac = a.mul(1 - t2).add(c.mul(t2));
-                triangleRasterizer.rasterize(a,ab,ac);
-            } else if (!aBehind && bBehind && !cBehind) {
+                Vertex tAC = a.mul(1 - t2).add(c.mul(t2));
+                triangleRasterizer.rasterize(a,tAB,tAC);
+            } else if (cBehind) {
                 // jsou videt a + c
                 double t1 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
-                Vertex ac = a.mul(1 - t1).add(c.mul(t1));
+                Vertex tAC = a.mul(1 - t1).add(c.mul(t1));
 
                 double t2 = -b.getPosition().getZ() / (c.getPosition().getZ() - b.getPosition().getZ());
-                Vertex bc = b.mul(1 - t2).add(c.mul(t2));
-                triangleRasterizer.rasterize(a,b,bc);
-                triangleRasterizer.rasterize(a,ac,bc);
-            } else {
+                Vertex tBC = b.mul(1 - t2).add(c.mul(t2));
+                triangleRasterizer.rasterize(a,b,tBC);
+                triangleRasterizer.rasterize(a,tAC,tBC);
+            } else if (aBehind) {
                 System.out.println("unable to render");
                 //nemuzeme rendrovat jelikoz 2 hrany nejsou viditelne
             }
@@ -166,12 +164,16 @@ public class Render {
                         IntStream.range(0, p.getCount())
                                 .mapToObj(i -> Arrays.asList(2 * i, 2 * i + 1))
                                 .forEach(indices -> {
-                                    // Determine whether to draw the line or not
                                     SortAxisLine(s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(0))),
                                             s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(1))));
                                 });
                 }
             }
         }
+    }
+
+    public void clear(){
+        bf.clear();
+        bf.getImageBuffer().clear();
     }
 }
