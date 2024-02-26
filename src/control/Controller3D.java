@@ -37,7 +37,8 @@ public class Controller3D implements Controller {
     public void initScene(){
         sceneBuff.add(new Triangle());
         sceneBuff.add(new Axis());
-        sceneBuff.add(new Arrow());
+        sceneBuff.add(new TestTriangle());
+       // sceneBuff.add(new Arrow());
     }
 
     public void prepZBuff(){
@@ -48,7 +49,7 @@ public class Controller3D implements Controller {
 
         modelMat = new Mat4Identity();
 
-        Vec3D e = new Vec3D(10, -15, 5);
+        Vec3D e = new Vec3D(25, 25, 15);
         double azimuth = Math.toRadians(100);
         double zenith = Math.toRadians(-15);
         cam = createCamera(e, azimuth, zenith);

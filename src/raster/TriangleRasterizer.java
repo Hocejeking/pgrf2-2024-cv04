@@ -23,6 +23,25 @@ public class TriangleRasterizer implements Rasterizer {
         b = new Vertex(new Point3D(transformToWindow(new Point3D(dB.get()))),b.getColor());
         c = new Vertex(new Point3D(transformToWindow(new Point3D(dC.get()))),c.getColor());
 
+        if(b.getPosition().getY() < a.getPosition().getY()) //pokud B je menší jak A
+        {
+            Vertex temp = b;
+            b = a;
+            a = temp;
+        }
+        if(c.getPosition().getY() < a.getPosition().getY()) //pokud C je menší jak A
+        {
+            Vertex temp = c;
+            c = a;
+            a = temp;
+        }
+        if(c.getPosition().getY() < b.getPosition().getY()) //pokud C je menší jak B
+        {
+            Vertex temp = c;
+            c = b;
+            b = temp;
+        }
+
         int aX = (int) Math.round(a.getPosition().getX());
         int aY = (int) Math.round(a.getPosition().getY());
         double aZ = a.getPosition().getZ();
@@ -34,45 +53,6 @@ public class TriangleRasterizer implements Rasterizer {
         int cX = (int) Math.round(c.getPosition().getX());
         int cY = (int) Math.round(c.getPosition().getY());
         double cZ = b.getPosition().getZ();
-
-
-        if(bY < aY) //pokud B je menší jak A
-        {
-            int tempX = bX;
-            int tempY = bY;
-            double tempZ = bZ;
-            bY = aY;
-            bX = aX;
-            bZ = aZ;
-            aX = tempX;
-            aY = tempY;
-            aZ = tempZ;
-        }
-        if(cY < aY) //pokud C je menší jak A
-        {
-            int tempX = cX;
-            int tempY = cY;
-            double tempZ = cZ;
-            cY = aY;
-            cX = aX;
-            cZ = aZ;
-            aX = tempX;
-            aY = tempY;
-            aZ = tempZ;
-        }
-        if(cY < bY) //pokud C je menší jak B
-        {
-            int tempX = cX;
-            int tempY = cY;
-            double tempZ = cZ;
-            cY = bY;
-            cX = bX;
-            cZ = bZ;
-            bX = tempX;
-            bY = tempY;
-            bZ = tempZ;
-        }
-
 
         //prvni cast
         for(int y = aY; y <=bY; y++){
@@ -93,7 +73,7 @@ public class TriangleRasterizer implements Rasterizer {
             for(int x = x1; x <= x2; x++){
                 double tZ = (x - x1) / (double) (x2-x1);
                 double z = (1-tZ) * z1 + tZ * z2;
-                zb.setPixelWithZTest(x,y,z, vAB.getColor());
+                zb.setPixelWithZTest(x,y,z, vAC.getColor());
             }
         }
         //zobrazovaci retezec, souradnice, kamery, Java, Rasterizace trojuhelniku, interpolace, zbuffer, Vertex, part buffer.

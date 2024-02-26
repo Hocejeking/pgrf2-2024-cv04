@@ -6,6 +6,7 @@ import raster.LineRasterizer;
 import raster.TriangleRasterizer;
 import transforms.Col;
 import transforms.Mat4;
+import transforms.Mat4Identity;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -55,9 +56,10 @@ public class Render {
     }
 
     private void SortTriangle(Vertex a, Vertex b, Vertex c){
-        a = new Vertex(a.getPosition().mul(modelMat).mul(view).mul(projecMat4), a.getColor());
-        b = new Vertex(b.getPosition().mul(modelMat).mul(view).mul(projecMat4), b.getColor());
-        c = new Vertex(c.getPosition().mul(modelMat).mul(view).mul(projecMat4), c.getColor());
+        Mat4 transMat = new Mat4Identity().mul(modelMat).mul(view).mul(projecMat4);
+        a = new Vertex(a.getPosition().mul(transMat), a.getColor());
+        b = new Vertex(b.getPosition().mul(transMat), b.getColor());
+        c = new Vertex(c.getPosition().mul(transMat), c.getColor());
         if(checkTriangleOutOfBounds(a,b,c))
             return;
 
