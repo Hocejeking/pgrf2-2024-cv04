@@ -38,4 +38,11 @@ public class Vertex implements Vectorizable<Vertex> {
         Col newColor = color.add(v.getColor());
         return new Vertex(newPosition, newColor);
     }
+    @Override
+    public String toString(){
+        System.out.println("X: " + this.getPosition().getX()+
+                            "Y: " + this.getPosition().getY()+
+                            "Z: "+ this.getPosition().getZ());
+        return null;
+    }
 }

@@ -16,6 +16,11 @@ import java.util.stream.IntStream;
 
 public class Render {
     private ZBuffer bf;
+
+    public void setFilled(boolean filled) {
+        triangleRasterizer.setFilled(filled);
+    }
+
     private TriangleRasterizer triangleRasterizer;
     private LineRasterizer lineRasterizer;
     private Mat4 modelMat, view, projecMat4;
@@ -57,60 +62,63 @@ public class Render {
 
     private void SortTriangle(Vertex a, Vertex b, Vertex c){
         Mat4 transMat = new Mat4Identity().mul(modelMat).mul(view).mul(projecMat4);
-        a = new Vertex(a.getPosition().mul(transMat), a.getColor());
-        b = new Vertex(b.getPosition().mul(transMat), b.getColor());
-        c = new Vertex(c.getPosition().mul(transMat), c.getColor());
-        if(checkTriangleOutOfBounds(a,b,c))
+        Vertex aVert = new Vertex(a.getPosition().mul(transMat), a.getColor());
+        Vertex bVert = new Vertex(b.getPosition().mul(transMat), b.getColor());
+        Vertex cVert = new Vertex(c.getPosition().mul(transMat), c.getColor());
+        if(checkTriangleOutOfBounds(aVert,bVert,cVert))
             return;
 
         //je potřeba saeřadit strany podle z.
-        if (a.getPosition().getZ() < b.getPosition().getZ()) {
-            Vertex temp = a;
-            a = b;
-            b = temp;
+        if (aVert.getPosition().getZ() < bVert.getPosition().getZ()) {
+            Vertex temp = aVert;
+            aVert = bVert;
+            bVert = temp;
         }
-        if (b.getPosition().getZ() < c.getPosition().getZ()) {
-            Vertex temp = b;
-            b = c;
-            c = temp;
+        if (bVert.getPosition().getZ() < cVert.getPosition().getZ()) {
+            Vertex temp = bVert;
+            bVert = cVert;
+            cVert = temp;
         }
-        if (a.getPosition().getZ() < b.getPosition().getZ()) {
-            Vertex temp = a;
-            a = b;
-            b = temp;
+        if (aVert.getPosition().getZ() < bVert.getPosition().getZ()) {
+            Vertex temp = aVert;
+            aVert = bVert;
+            bVert = temp;
         }
-        boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0 || c.getPosition().getZ() < 0;
+        boolean vertexBehindNearPlane = aVert.getPosition().getZ() < 0 || bVert.getPosition().getZ() < 0 || cVert.getPosition().getZ() < 0;
 
-        if (vertexBehindNearPlane) {
-            boolean aBehind = a.getPosition().getZ() < 0;
-            boolean bBehind = b.getPosition().getZ() < 0;
-            boolean cBehind = c.getPosition().getZ() < 0;
+            if (vertexBehindNearPlane) {
+                boolean aBehind = aVert.getPosition().getZ() < 0;
+                boolean bBehind = bVert.getPosition().getZ() < 0;
+                boolean cBehind = cVert.getPosition().getZ() < 0;
 
-            if (bBehind) {
-                // jsou videt b + c
-                double t1 = (0 - a.getPosition().getZ()) / (b.getPosition().getZ() - a.getPosition().getZ());
-                Vertex tAB = a.mul(1 - t1).add(b.mul(t1));
+                if (bBehind) {
+                    // jsou videt b + c
+                    double t1 = (0 - aVert.getPosition().getZ()) / (bVert.getPosition().getZ() - aVert.getPosition().getZ());
+                    Vertex tAB = aVert.mul(1 - t1).add(bVert.mul(t1));
 
-                double t2 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
-                Vertex tAC = a.mul(1 - t2).add(c.mul(t2));
-                triangleRasterizer.rasterize(a,tAB,tAC);
-            } else if (cBehind) {
-                // jsou videt a + c
-                double t1 = -a.getPosition().getZ() / (c.getPosition().getZ() - a.getPosition().getZ());
-                Vertex tAC = a.mul(1 - t1).add(c.mul(t1));
+                    double t2 = -aVert.getPosition().getZ() / (cVert.getPosition().getZ() - aVert.getPosition().getZ());
+                    Vertex tAC = aVert.mul(1 - t2).add(cVert.mul(t2));
+                    System.out.println("Rasterizing b +c");
+                    triangleRasterizer.rasterize(aVert, tAB, tAC);
+                } else if (cBehind) {
+                    // jsou videt a + c
+                    double t1 = -aVert.getPosition().getZ() / (cVert.getPosition().getZ() - aVert.getPosition().getZ());
+                    Vertex tAC = aVert.mul(1 - t1).add(cVert.mul(t1));
 
-                double t2 = -b.getPosition().getZ() / (c.getPosition().getZ() - b.getPosition().getZ());
-                Vertex tBC = b.mul(1 - t2).add(c.mul(t2));
-                triangleRasterizer.rasterize(a,b,tBC);
-                triangleRasterizer.rasterize(a,tAC,tBC);
-            } else if (aBehind) {
-                System.out.println("unable to render");
-                //nemuzeme rendrovat jelikoz 2 hrany nejsou viditelne
+                    double t2 = -bVert.getPosition().getZ() / (cVert.getPosition().getZ() - bVert.getPosition().getZ());
+                    Vertex tBC = bVert.mul(1 - t2).add(cVert.mul(t2));
+                    System.out.println("Rasterizing a+c");
+                    triangleRasterizer.rasterize(aVert, bVert, tBC);
+                    triangleRasterizer.rasterize(aVert, tAC, tBC);
+                } else if (aBehind) {
+                    System.out.println("unable to render");
+                    //nemuzeme rendrovat jelikoz 2 hrany nejsou viditelne
+                }
+            } else {
+                //ve je videt
+                System.out.println("Rasterizing everything");
+                triangleRasterizer.rasterize(aVert, bVert, cVert);
             }
-        } else {
-            //ve je videt
-            triangleRasterizer.rasterize(a,b,c);
-        }
     }
 
     private boolean checkTriangleOutOfBounds(Vertex a, Vertex b, Vertex c){
@@ -151,6 +159,7 @@ public class Render {
         for(Solid s : solids){
             for(Part p : s.getPartBuffer()){
                 TopologyType topT = p.getType();
+
                 switch (topT) {
                     case TRIANGLES:
                         // Procházíme všechny trojúhelníky v části

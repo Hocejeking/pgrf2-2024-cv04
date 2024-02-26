@@ -11,11 +11,22 @@ import java.util.Optional;
 public class TriangleRasterizer implements Rasterizer {
     private final ZBuffer zb;
 
+    public boolean isFilled() {
+        return filled;
+    }
+
+    public void setFilled(boolean filled) {
+        this.filled = filled;
+    }
+
+    private boolean filled = true;
+
     public TriangleRasterizer(ZBuffer zb){
         this.zb = zb;
     }
 
     public void rasterize(Vertex a, Vertex b, Vertex c){
+        if(filled) {
         Optional<Vec3D> dA = a.getPosition().dehomog();
         Optional<Vec3D> dB = b.getPosition().dehomog();
         Optional<Vec3D> dC = c.getPosition().dehomog();
@@ -23,85 +34,76 @@ public class TriangleRasterizer implements Rasterizer {
         b = new Vertex(new Point3D(transformToWindow(new Point3D(dB.get()))),b.getColor());
         c = new Vertex(new Point3D(transformToWindow(new Point3D(dC.get()))),c.getColor());
 
-        if(b.getPosition().getY() < a.getPosition().getY()) //pokud B je menší jak A
-        {
-            Vertex temp = b;
-            b = a;
-            a = temp;
-        }
-        if(c.getPosition().getY() < a.getPosition().getY()) //pokud C je menší jak A
-        {
-            Vertex temp = c;
-            c = a;
-            a = temp;
-        }
-        if(c.getPosition().getY() < b.getPosition().getY()) //pokud C je menší jak B
-        {
-            Vertex temp = c;
-            c = b;
-            b = temp;
-        }
-
-        int aX = (int) Math.round(a.getPosition().getX());
-        int aY = (int) Math.round(a.getPosition().getY());
-        double aZ = a.getPosition().getZ();
-
-        int bX = (int) Math.round(b.getPosition().getX());
-        int bY = (int) Math.round(b.getPosition().getY());
-        double bZ = b.getPosition().getZ();
-
-        int cX = (int) Math.round(c.getPosition().getX());
-        int cY = (int) Math.round(c.getPosition().getY());
-        double cZ = b.getPosition().getZ();
-
-        //prvni cast
-        for(int y = aY; y <=bY; y++){
-            //hrana AB
-            double tAB = (y - aY) / (double) (bY - aY);
-            Vertex vAB = a.mul(1-tAB).add(b.mul(tAB));
-            int x1 =(int) vAB.getPosition().getX();
-            double z1 = vAB.getPosition().getZ();
-            //hrana AC
-            double tAC = (y-aY)/(double)(cY-aY);
-            Vertex vAC = a.mul(1-tAC).add(c.mul(tAC));
-            int x2 =(int) vAC.getPosition().getX();
-            double z2 = vAC.getPosition().getZ();
-
-
-
-            //Triangle vs Triangle-strip
-            for(int x = x1; x <= x2; x++){
-                double tZ = (x - x1) / (double) (x2-x1);
-                double z = (1-tZ) * z1 + tZ * z2;
-                zb.setPixelWithZTest(x,y,z, vAC.getColor());
+            if(b.getPosition().getY() < a.getPosition().getY()) //pokud B je menší jak A
+            {
+                Vertex temp = b;
+                b = a;
+                a = temp;
             }
-        }
-        //zobrazovaci retezec, souradnice, kamery, Java, Rasterizace trojuhelniku, interpolace, zbuffer, Vertex, part buffer.
-
-        //druha cast
-        for(int y = bY; y <= cY; y++) {
-            //hrana BC
-            double tBC = (y - bY) / (double) (cY - bY);
-            Vertex vBC = b.mul(1-tBC).add(c.mul(tBC));
-            int x1 = (int) vBC.getPosition().getX();
-            double z1 = vBC.getPosition().getZ();
-            //hrana AC
-            double tAC = (y - aY) / (double) (cY - aY);
-            Vertex vAC = a.mul(1-tAC).add(c.mul(tAC));
-            int x2 = (int) vAC.getPosition().getX();
-            double z2 = vAC.getPosition().getZ();
-
-            if (x1 > x2) {
-                int tempX = x1;
-                x1 = x2;
-                x2 = tempX;
+            if(c.getPosition().getY() < a.getPosition().getY()) //pokud C je menší jak A
+            {
+                Vertex temp = c;
+                c = a;
+                a = temp;
+            }
+            if(c.getPosition().getY() < b.getPosition().getY()) //pokud C je menší jak B
+            {
+                Vertex temp = c;
+                c = b;
+                b = temp;
             }
 
-            for (int x = x1; x <= x2; x++) {
-                double tZ = (x - x1) / (double) (x2-x1);
-                double z = (1 - tZ) * z1 + tZ * z2;
-                zb.setPixelWithZTest(x, y, z, vAC.getColor());
+            int yStart = Math.max(0, (int) a.getPosition().getY() + 1);
+            double yEnd = Math.min(zb.getImageBuffer().getHeight() - 1, b.getPosition().getY());
+            for (int y = yStart; y <= yEnd; y++) {
+                //hrana AB
+                double tAB = (y - a.getPosition().getY()) / (b.getPosition().getY() - a.getPosition().getY());
+                Vertex vAB = a.mul(1 - tAB).add(b.mul(tAB));
+
+                //hrana AC
+                double tAC = (y - a.getPosition().getY()) / (c.getPosition().getY() - a.getPosition().getY());
+                Vertex vAC = a.mul(1 - tAC).add(c.mul(tAC));
+
+                if (Math.round(vAB.getPosition().getX()) > Math.round(vAC.getPosition().getX())) {
+                    Vertex temp = vAB;
+                    vAB = vAC;
+                    vAC = temp;
+                }
+                for (int x = (int) vAB.getPosition().getX(); x <= vAC.getPosition().getX(); x++) {
+                    double tZ = (x - vAB.getPosition().getX()) / (double) (vAC.getPosition().getX() - vAB.getPosition().getX());
+                    Vertex z = vAB.mul(1 - tZ).add(vAC.mul(tZ));
+                    zb.setPixelWithZTest(x, y, z.getPosition().getZ(), z.getColor());
+                }
             }
+
+            int xStart = Math.max(0, (int) b.getPosition().getY() + 1);
+            double xEnd = Math.min(zb.getImageBuffer().getWidth() - 1, c.getPosition().getY());
+            for (int y = xStart; y <= xEnd; y++) {
+                //hrana BC
+                double tBC = (y - b.getPosition().getY()) / (c.getPosition().getY() - b.getPosition().getY());
+                Vertex vBC = b.mul(1 - tBC).add(c.mul(tBC));
+
+                //hrana AC
+                double tAC2 = (y - a.getPosition().getY()) / (c.getPosition().getY() - a.getPosition().getY());
+                Vertex vAC = a.mul(1 - tAC2).add(c.mul(tAC2));
+                if (vBC.getPosition().getX() > vAC.getPosition().getX()) {
+                    Vertex temp = vBC;
+                    vBC = vAC;
+                    vAC = temp;
+                }
+
+                for (int x = (int) vBC.getPosition().getX(); x <= vAC.getPosition().getX(); x++) {
+                    double tZ = (x - vBC.getPosition().getX()) / (vAC.getPosition().getX() - vBC.getPosition().getX());
+                    Vertex z = vBC.mul(1 - tZ).add(vAC.mul(tZ));
+                    zb.setPixelWithZTest(x, y, z.getPosition().getZ(), z.getColor());
+                }
+            }
+        }
+        else{
+            LineRasterizer lr = new LineRasterizer(zb);
+            lr.rasterize(a,b);
+            lr.rasterize(b,c);
+            lr.rasterize(a,c);
         }
     }
 

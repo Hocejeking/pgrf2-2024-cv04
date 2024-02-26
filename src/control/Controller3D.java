@@ -12,6 +12,8 @@ import java.util.ArrayList;
 
 public class Controller3D implements Controller {
     private final Panel panel;
+    private boolean switched = false;
+    private boolean filled = true;
     private Camera cam;
     final double krok_kamery = 0.1;
     private final ArrayList<Solid> sceneBuff = new ArrayList<>();
@@ -49,7 +51,7 @@ public class Controller3D implements Controller {
 
         modelMat = new Mat4Identity();
 
-        Vec3D e = new Vec3D(25, 25, 15);
+        Vec3D e = new Vec3D(5, 5, 15);
         double azimuth = Math.toRadians(100);
         double zenith = Math.toRadians(-15);
         cam = createCamera(e, azimuth, zenith);
@@ -100,9 +102,10 @@ public class Controller3D implements Controller {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (move) {
+
                     if (x != -1 && y != -1) {
-                        double daz = (e.getX() - x) / 300.0;
-                        double dze = (e.getY() - y) / 300.0;
+                        double daz = (e.getX() - x) / 800d;
+                        double dze = (e.getY() - y) / 600d;
                         cam = cam.addAzimuth(daz);
                         cam = cam.addZenith(dze);
                         show();
@@ -132,8 +135,17 @@ public class Controller3D implements Controller {
                     cam = cam.right(krok_kamery);
                 }
                 if (key == KeyEvent.VK_F){
-                    System.out.println("switching");
-                    projecMat4 = new Mat4PerspRH(Math.PI / 3, (float )bf.getImageBuffer().getHeight() / bf.getImageBuffer().getWidth(), 0.5, 30);
+                    if(switched){
+                        projecMat4 =  new Mat4PerspRH(Math.PI / 3, bf.getImageBuffer().getHeight() / (float) bf.getImageBuffer().getWidth(), 0.5, 30);
+                    }
+                    else{
+                        projecMat4 = new Mat4OrthoRH(5, 5, 0.5, 150);
+                    }
+                    switched = !switched;
+
+                }
+                if(key == KeyEvent.VK_G){
+                    filled = !filled;
                 }
 
                 show();
@@ -146,6 +158,7 @@ public class Controller3D implements Controller {
         bf.clear();
         bf.getImageBuffer().clear();
         render = new Render(bf, modelMat,cam.getViewMatrix(),projecMat4);
+        render.setFilled(filled);
         render.clear();
         render.draw(sceneBuff);
         panel.repaint();
