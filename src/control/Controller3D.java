@@ -7,8 +7,11 @@ import transforms.*;
 import view.Panel;
 import view.Render;
 
+import javax.swing.plaf.ComponentUI;
+import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.*;
 
 public class Controller3D implements Controller {
     private final Panel panel;
@@ -16,12 +19,13 @@ public class Controller3D implements Controller {
     private boolean filled = true;
     private Camera cam;
     final double krok_kamery = 0.1;
-    private final ArrayList<Solid> sceneBuff = new ArrayList<>();
+    private final ArrayList<Solid> sceneBuff = new ArrayList<Solid>();
     private Mat4 modelMat;
     private Mat4 projecMat4;
+    private int activeGeometry = 0;
     ZBuffer bf;
     Render render;
-    public Controller3D(Panel panel) {
+    public Controller3D(Panel panel) throws IOException {
         this.panel = panel;
         initObjects(panel.getRaster());
         prepMat();
@@ -36,10 +40,11 @@ public class Controller3D implements Controller {
     }
 
     //pridam objekty do sceny
-    public void initScene(){
+    public void initScene() throws IOException {
         sceneBuff.add(new Triangle());
-        sceneBuff.add(new Axis());
         sceneBuff.add(new TestTriangle());
+        sceneBuff.add(new Axis());
+        sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
        // sceneBuff.add(new Arrow());
     }
 
@@ -84,34 +89,32 @@ public class Controller3D implements Controller {
             }
         });
         MouseAdapter cameraListener = new MouseAdapter() {
-            int x = -1, y = -1;
-            boolean move = false;
-
+            boolean mouseClicked;
+            int x1;
+            int y1;
             @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1)
-                    move = true;
+            public void mouseReleased(MouseEvent e) {
+                mouseClicked = false;
             }
 
             @Override
-            public void mouseReleased(MouseEvent e) {
-                x = y = -1;
-                move = false;
+            public void mousePressed(MouseEvent e) {
+                mouseClicked = true;
+                x1 = e.getX();
+                y1 = e.getY();
             }
 
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (move) {
+                if (mouseClicked) {
+                    double a = (e.getY() - y1) / 300d;
+                    double b = (e.getX() - x1) / 300d;
+                    cam = cam.addAzimuth(b);
+                    cam = cam.addZenith(a);
+                    show();
+                    x1 = e.getX();
+                    y1 = e.getY();
 
-                    if (x != -1 && y != -1) {
-                        double daz = (e.getX() - x) / 800d;
-                        double dze = (e.getY() - y) / 600d;
-                        cam = cam.addAzimuth(daz);
-                        cam = cam.addZenith(dze);
-                        show();
-                    }
-                    x = e.getX();
-                    y = e.getY();
                 }
             }
         };
@@ -122,16 +125,16 @@ public class Controller3D implements Controller {
             public void keyPressed(KeyEvent e) {
                 int key = e.getKeyCode();
 
-                if (key == KeyEvent.VK_UP) {
+                if (key == KeyEvent.VK_W) {
                     cam = cam.forward(krok_kamery);
                 }
-                if (key == KeyEvent.VK_DOWN) {
+                if (key == KeyEvent.VK_S) {
                     cam = cam.backward(krok_kamery);
                 }
-                if (key == KeyEvent.VK_LEFT) {
+                if (key == KeyEvent.VK_A) {
                     cam = cam.left(krok_kamery);
                 }
-                if (key == KeyEvent.VK_RIGHT) {
+                if (key == KeyEvent.VK_D) {
                     cam = cam.right(krok_kamery);
                 }
                 if (key == KeyEvent.VK_F){
@@ -147,7 +150,50 @@ public class Controller3D implements Controller {
                 if(key == KeyEvent.VK_G){
                     filled = !filled;
                 }
+                if(key == KeyEvent.VK_O){
+                    if(activeGeometry + 1 > sceneBuff.size() - 1){
+                        return;
+                    }
+                    else{
+                        activeGeometry += 1;
+                    }
+                }
+                if(key == KeyEvent.VK_I){
+                    if(activeGeometry -1 < 0 ){
+                        return;
+                    }
+                    else{
+                        activeGeometry -= 1;
+                    }
+                }
 
+                if(key == KeyEvent.VK_UP){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Transl(0,1,0)));
+                }
+                if(key == KeyEvent.VK_DOWN){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Transl(0,-1,0)));
+                }
+                if(key == KeyEvent.VK_LEFT){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Transl(1,0,0)));
+                }
+                if(key == KeyEvent.VK_RIGHT){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Transl(-1,0,0)));
+                }
+                if(key == KeyEvent.VK_X){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4RotXYZ(.5d,0d,0d)));
+                }
+                if(key == KeyEvent.VK_Y){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4RotXYZ(0d,.5d,0d)));
+                }
+                if(key == KeyEvent.VK_Z){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4RotXYZ(0d,0d,.5d)));
+                }
+                if(key == KeyEvent.VK_N){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Scale(.5d,.5d,.5d)));
+                }
+                if(key == KeyEvent.VK_M){
+                    sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Scale(1.5d,1.5d,1.5d)));
+                }
                 show();
             }
         });

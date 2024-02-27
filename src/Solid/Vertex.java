@@ -6,8 +6,8 @@ import transforms.Point3D;
 import transforms.Vec3D;
 
 public class Vertex implements Vectorizable<Vertex> {
-    private final Point3D position;
-    private final Col color;
+    private Point3D position;
+    private Col color;
 
     //souřadnice do textury
 
@@ -19,9 +19,16 @@ public class Vertex implements Vectorizable<Vertex> {
     public Point3D getPosition(){
         return position;
     }
+    public void setPosition(Point3D pos){
+        this.position = pos;
+    }
 
     public Col getColor(){
         return color;
+    }
+
+    public void setColor(Col color){
+        this.color = color;
     }
 
     public Vertex mul(double t) {

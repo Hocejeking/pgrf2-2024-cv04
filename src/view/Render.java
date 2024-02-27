@@ -9,8 +9,10 @@ import transforms.Mat4;
 import transforms.Mat4Identity;
 
 import java.awt.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Dictionary;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -23,13 +25,21 @@ public class Render {
 
     private TriangleRasterizer triangleRasterizer;
     private LineRasterizer lineRasterizer;
-    private Mat4 modelMat, view, projecMat4;
+
+    public Mat4 getModel() {
+        return model;
+    }
+
+    public void setModel(Mat4 model) {
+        this.model = model;
+    }
+
+    private Mat4 model, view, projecMat4;
 
     public Render(ZBuffer bf, Mat4 modelMat, Mat4 view, Mat4 projecMat4) {
         this.bf = bf;
         triangleRasterizer = new TriangleRasterizer(bf);
         lineRasterizer = new LineRasterizer(bf);
-        this.modelMat = modelMat;
         this.view = view;
         this.projecMat4 = projecMat4;
     }
@@ -61,7 +71,7 @@ public class Render {
     }
 
     private void SortTriangle(Vertex a, Vertex b, Vertex c){
-        Mat4 transMat = new Mat4Identity().mul(modelMat).mul(view).mul(projecMat4);
+        Mat4 transMat = new Mat4Identity().mul(model).mul(view).mul(projecMat4);
         Vertex aVert = new Vertex(a.getPosition().mul(transMat), a.getColor());
         Vertex bVert = new Vertex(b.getPosition().mul(transMat), b.getColor());
         Vertex cVert = new Vertex(c.getPosition().mul(transMat), c.getColor());
@@ -157,9 +167,9 @@ public class Render {
 
     public void draw(ArrayList<Solid> solids){
         for(Solid s : solids){
+            this.setModel(s.getModel());
             for(Part p : s.getPartBuffer()){
                 TopologyType topT = p.getType();
-
                 switch (topT) {
                     case TRIANGLES:
                         // Procházíme všechny trojúhelníky v části
