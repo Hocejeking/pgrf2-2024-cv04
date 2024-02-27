@@ -1,5 +1,6 @@
 package raster;
 
+import Shader.*;
 import Solid.Vertex;
 import Zbuffer.ZBuffer;
 import transforms.Col;
@@ -10,10 +11,7 @@ import java.util.Optional;
 
 public class TriangleRasterizer implements Rasterizer {
     private final ZBuffer zb;
-
-    public boolean isFilled() {
-        return filled;
-    }
+    private final InterShade shader = new InterShade();
 
     public void setFilled(boolean filled) {
         this.filled = filled;

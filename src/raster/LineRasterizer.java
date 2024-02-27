@@ -1,5 +1,6 @@
 package raster;
 
+import Shader.InterShade;
 import Solid.Vertex;
 import Zbuffer.ZBuffer;
 import transforms.Point3D;
@@ -12,6 +13,7 @@ import static java.lang.Math.abs;
 
 public class LineRasterizer implements Rasterizer {
     private final ZBuffer zb;
+    private final InterShade shader = new InterShade();
     public LineRasterizer(ZBuffer zb){
         this.zb = zb;
     }
@@ -42,7 +44,7 @@ public class LineRasterizer implements Rasterizer {
                 double t1 = (x - a.getPosition().getX()) / (b.getPosition().getX() - a.getPosition().getX());
                 Vertex d = a.mul(1 - t1).add(b.mul(t1));
 
-                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), d.getColor());
+                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), shader.shade(d));
             }
         }
         else{
@@ -54,7 +56,7 @@ public class LineRasterizer implements Rasterizer {
             for (int y = Math.max(0, (int) a.getPosition().getY() + 1); y <= Math.min(zb.getImageBuffer().getHeight() - 1, b.getPosition().getY()); y++) {
                 double t1 = (y - a.getPosition().getY()) / (b.getPosition().getY() - a.getPosition().getY());
                 Vertex d = a.mul(1 - t1).add(b.mul(t1));
-                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), d.getColor());
+                zb.setPixelWithZTest((int) Math.round(d.getPosition().getX()), (int) Math.round(d.getPosition().getY()), d.getPosition().getZ(), shader.shade(d));
             }
         }
 
