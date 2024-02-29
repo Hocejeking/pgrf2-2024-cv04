@@ -22,6 +22,7 @@ public class Render {
     public void setFilled(boolean filled) {
         triangleRasterizer.setFilled(filled);
     }
+    public void setTextured(boolean textured){triangleRasterizer.setTextured(textured);}
 
     private TriangleRasterizer triangleRasterizer;
     private LineRasterizer lineRasterizer;
@@ -47,6 +48,34 @@ public class Render {
     private void SortAxisLine(Vertex a, Vertex b){
         a = new Vertex(a.getPosition().mul(view).mul(projecMat4), a.getColor());
         b = new Vertex(b.getPosition().mul(view).mul(projecMat4), b.getColor());
+        if(checkAxisOutOfBounds(a,b))
+            return;
+        if(a.getPosition().getZ() <b.getPosition().getZ()){
+            Vertex temp = a;
+            a = b;
+            b = temp;
+        }
+        boolean vertexBehindNearPlane = a.getPosition().getZ() < 0 || b.getPosition().getZ() < 0;
+        if(vertexBehindNearPlane){
+            boolean aBehind = a.getPosition().getZ()<0;
+            if(aBehind){
+                return;
+            }else{
+                double t1 = (0 - a.getPosition().getZ()) / (b.getPosition().getZ() - a.getPosition().getZ());
+                Vertex ab = a.mul(1 - t1).add(b.mul(t1));
+                lineRasterizer.rasterize(a,ab);
+            }
+        }
+        else{
+            lineRasterizer.rasterize(a,b);
+        }
+    }
+
+    private void SortLines(Vertex a, Vertex b){
+        Mat4 transMat = new Mat4Identity().mul(model).mul(view).mul(projecMat4);
+
+        a = new Vertex(a.getPosition().mul(transMat), a.getColor());
+        b = new Vertex(b.getPosition().mul(transMat), b.getColor());
         if(checkAxisOutOfBounds(a,b))
             return;
         if(a.getPosition().getZ() <b.getPosition().getZ()){
@@ -136,11 +165,11 @@ public class Render {
         boolean triangleOutOfLeftBounds = a.getPosition().getX() < -a.getPosition().getW() && b.getPosition().getX() < -b.getPosition().getW() && c.getPosition().getX() < -c.getPosition().getW();
         boolean triangleOutOfTopBounds = a.getPosition().getY() > a.getPosition().getW() && b.getPosition().getY() > b.getPosition().getW() && c.getPosition().getY() > c.getPosition().getW();
         boolean triangleOutOfBottomBounds = a.getPosition().getY() < -a.getPosition().getW() && b.getPosition().getY() < -b.getPosition().getW() && c.getPosition().getY() < -c.getPosition().getW();
-        //boolean triangleOutOfFrontBounds = a.getPosition().getZ() > a.getPosition().getW() && b.getPosition().getZ() > b.getPosition().getW() && c.getPosition().getZ() > c.getPosition().getW();
+        boolean triangleOutOfFrontBounds = a.getPosition().getZ() > a.getPosition().getW() && b.getPosition().getZ() > b.getPosition().getW() && c.getPosition().getZ() > c.getPosition().getW();
         boolean triangleOutOfBackBounds = a.getPosition().getZ() < 0 && b.getPosition().getZ() < 0 && c.getPosition().getZ() < 0;
 
         if (triangleOutOfRightBounds || triangleOutOfLeftBounds || triangleOutOfTopBounds ||
-                triangleOutOfBottomBounds /*|| triangleOutOfFrontBounds*/ || triangleOutOfBackBounds) {
+                triangleOutOfBottomBounds || triangleOutOfFrontBounds || triangleOutOfBackBounds) {
             return true;
         }
         else{
@@ -188,6 +217,11 @@ public class Render {
                                     SortAxisLine(s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(0))),
                                             s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + indices.get(1))));
                                 });
+                    case LINES:
+                        IntStream.range(0, p.getCount()).mapToObj(i -> Arrays.asList(2 * i, 2 * i + 1)).forEach(integers ->  {
+                            SortLines(s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + integers.get(0))),
+                                    s.getVertexBuffer().get(s.getIndexBuffer().get(p.getStart() + integers.get(1))));
+                        });
                 }
             }
         }

@@ -17,6 +17,7 @@ public class Controller3D implements Controller {
     private final Panel panel;
     private boolean switched = false;
     private boolean filled = true;
+    private boolean textured = false;
     private Camera cam;
     final double krok_kamery = 0.1;
     private final ArrayList<Solid> sceneBuff = new ArrayList<Solid>();
@@ -194,6 +195,9 @@ public class Controller3D implements Controller {
                 if(key == KeyEvent.VK_M){
                     sceneBuff.get(activeGeometry).setModel(sceneBuff.get(activeGeometry).getModel().mul(new Mat4Scale(1.5d,1.5d,1.5d)));
                 }
+                if(key == KeyEvent.VK_T){
+                    textured = !textured;
+                }
                 show();
             }
         });
@@ -204,6 +208,7 @@ public class Controller3D implements Controller {
         bf.clear();
         bf.getImageBuffer().clear();
         render = new Render(bf, modelMat,cam.getViewMatrix(),projecMat4);
+        render.setTextured(textured);
         render.setFilled(filled);
         render.clear();
         render.draw(sceneBuff);

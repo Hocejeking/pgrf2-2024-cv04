@@ -5,9 +5,9 @@ import transforms.Col;
 import transforms.Vec2D;
 
 public class TexShade implements Shader {
+    private static TextureLoader texLoader = new TextureLoader();
     @Override
     public Col shade(Vertex v){
-        TextureLoader texLoader = new TextureLoader();
         return texLoader.getCol(v.getTexCoords());
     }
 }

@@ -45,11 +45,7 @@ public class LineRasterizer implements Rasterizer {
             for (int x = Math.max(0, (int) a.getPosition().getX() + 1); x <= Math.min(zb.getImageBuffer().getWidth() - 1, b.getPosition().getX()); x++) {
                 double t1 = (x - a.getPosition().getX()) / (b.getPosition().getX() - a.getPosition().getX());
                 Vertex d = a.mul(1 - t1).add(b.mul(t1));
-
-                if(d.areTexCoordsPresent())
-                    zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), texShader.shade(d));
-                else
-                    zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), shader.shade(d));
+                zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), shader.shade(d));
             }
         }
         else{
@@ -61,10 +57,7 @@ public class LineRasterizer implements Rasterizer {
             for (int y = Math.max(0, (int) a.getPosition().getY() + 1); y <= Math.min(zb.getImageBuffer().getHeight() - 1, b.getPosition().getY()); y++) {
                 double t1 = (y - a.getPosition().getY()) / (b.getPosition().getY() - a.getPosition().getY());
                 Vertex d = a.mul(1 - t1).add(b.mul(t1));
-                if(d.areTexCoordsPresent())
-                    zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), texShader.shade(d));
-                else
-                    zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), shader.shade(d));
+                zb.setPixelWithZTest((int) d.getPosition().getX(), (int) d.getPosition().getY(), d.getPosition().getZ(), shader.shade(d));
             }
         }
 
