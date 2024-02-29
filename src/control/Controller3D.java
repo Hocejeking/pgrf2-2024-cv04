@@ -44,8 +44,8 @@ public class Controller3D implements Controller {
         sceneBuff.add(new Triangle());
         sceneBuff.add(new TestTriangle());
         sceneBuff.add(new Axis());
-        sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
-       // sceneBuff.add(new Arrow());
+        //sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
+        // sceneBuff.add(new Arrow());
     }
 
     public void prepZBuff(){

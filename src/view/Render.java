@@ -72,9 +72,9 @@ public class Render {
 
     private void SortTriangle(Vertex a, Vertex b, Vertex c){
         Mat4 transMat = new Mat4Identity().mul(model).mul(view).mul(projecMat4);
-        Vertex aVert = new Vertex(a.getPosition().mul(transMat), a.getColor());
-        Vertex bVert = new Vertex(b.getPosition().mul(transMat), b.getColor());
-        Vertex cVert = new Vertex(c.getPosition().mul(transMat), c.getColor());
+        Vertex aVert = new Vertex(a.getPosition().mul(transMat), a.getColor(), a.getTexCoords());
+        Vertex bVert = new Vertex(b.getPosition().mul(transMat), b.getColor(), b.getTexCoords());
+        Vertex cVert = new Vertex(c.getPosition().mul(transMat), c.getColor(), c.getTexCoords());
         if(checkTriangleOutOfBounds(aVert,bVert,cVert))
             return;
 
@@ -136,11 +136,11 @@ public class Render {
         boolean triangleOutOfLeftBounds = a.getPosition().getX() < -a.getPosition().getW() && b.getPosition().getX() < -b.getPosition().getW() && c.getPosition().getX() < -c.getPosition().getW();
         boolean triangleOutOfTopBounds = a.getPosition().getY() > a.getPosition().getW() && b.getPosition().getY() > b.getPosition().getW() && c.getPosition().getY() > c.getPosition().getW();
         boolean triangleOutOfBottomBounds = a.getPosition().getY() < -a.getPosition().getW() && b.getPosition().getY() < -b.getPosition().getW() && c.getPosition().getY() < -c.getPosition().getW();
-        boolean triangleOutOfFrontBounds = a.getPosition().getZ() > a.getPosition().getW() && b.getPosition().getZ() > b.getPosition().getW() && c.getPosition().getZ() > c.getPosition().getW();
+        //boolean triangleOutOfFrontBounds = a.getPosition().getZ() > a.getPosition().getW() && b.getPosition().getZ() > b.getPosition().getW() && c.getPosition().getZ() > c.getPosition().getW();
         boolean triangleOutOfBackBounds = a.getPosition().getZ() < 0 && b.getPosition().getZ() < 0 && c.getPosition().getZ() < 0;
 
         if (triangleOutOfRightBounds || triangleOutOfLeftBounds || triangleOutOfTopBounds ||
-                triangleOutOfBottomBounds || triangleOutOfFrontBounds || triangleOutOfBackBounds) {
+                triangleOutOfBottomBounds /*|| triangleOutOfFrontBounds*/ || triangleOutOfBackBounds) {
             return true;
         }
         else{

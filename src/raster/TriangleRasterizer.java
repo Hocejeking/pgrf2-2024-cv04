@@ -12,6 +12,7 @@ import java.util.Optional;
 public class TriangleRasterizer implements Rasterizer {
     private final ZBuffer zb;
     private final InterShade shader = new InterShade();
+    private final TexShade texShader = new TexShade();
 
     public void setFilled(boolean filled) {
         this.filled = filled;
@@ -28,9 +29,9 @@ public class TriangleRasterizer implements Rasterizer {
         Optional<Vec3D> dA = a.getPosition().dehomog();
         Optional<Vec3D> dB = b.getPosition().dehomog();
         Optional<Vec3D> dC = c.getPosition().dehomog();
-        a = new Vertex(new Point3D(transformToWindow(new Point3D(dA.get()))),a.getColor());
-        b = new Vertex(new Point3D(transformToWindow(new Point3D(dB.get()))),b.getColor());
-        c = new Vertex(new Point3D(transformToWindow(new Point3D(dC.get()))),c.getColor());
+        a = new Vertex(new Point3D(transformToWindow(new Point3D(dA.get()))),a.getColor(), a.getTexCoords());
+        b = new Vertex(new Point3D(transformToWindow(new Point3D(dB.get()))),b.getColor(), b.getTexCoords());
+        c = new Vertex(new Point3D(transformToWindow(new Point3D(dC.get()))),c.getColor(), c.getTexCoords());
 
             if(b.getPosition().getY() < a.getPosition().getY()) //pokud B je menší jak A
             {
@@ -70,7 +71,10 @@ public class TriangleRasterizer implements Rasterizer {
                 for (int x = (int) vAB.getPosition().getX(); x <= vAC.getPosition().getX(); x++) {
                     double tZ = (x - vAB.getPosition().getX()) / (double) (vAC.getPosition().getX() - vAB.getPosition().getX());
                     Vertex z = vAB.mul(1 - tZ).add(vAC.mul(tZ));
-                    zb.setPixelWithZTest(x, y, z.getPosition().getZ(), z.getColor());
+                    if(z.areTexCoordsPresent())
+                        zb.setPixelWithZTest(x, y, z.getPosition().getZ(), texShader.shade(z));
+                    else
+                        zb.setPixelWithZTest(x,y,z.getPosition().getZ(), shader.shade(z));
                 }
             }
 
@@ -93,7 +97,10 @@ public class TriangleRasterizer implements Rasterizer {
                 for (int x = (int) vBC.getPosition().getX(); x <= vAC.getPosition().getX(); x++) {
                     double tZ = (x - vBC.getPosition().getX()) / (vAC.getPosition().getX() - vBC.getPosition().getX());
                     Vertex z = vBC.mul(1 - tZ).add(vAC.mul(tZ));
-                    zb.setPixelWithZTest(x, y, z.getPosition().getZ(), z.getColor());
+                    if(z.areTexCoordsPresent())
+                        zb.setPixelWithZTest(x, y, z.getPosition().getZ(), texShader.shade(z));
+                    else
+                        zb.setPixelWithZTest(x,y,z.getPosition().getZ(), shader.shade(z));
                 }
             }
         }
