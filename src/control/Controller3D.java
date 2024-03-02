@@ -44,9 +44,9 @@ public class Controller3D implements Controller {
     public void initScene() throws IOException {
         sceneBuff.add(new Triangle());
         sceneBuff.add(new TestTriangle());
+        sceneBuff.add(new BicubicObject(Cubic.FERGUSON));
+        sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
         sceneBuff.add(new Axis());
-        //sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
-        // sceneBuff.add(new Arrow());
     }
 
     public void prepZBuff(){
@@ -54,12 +54,11 @@ public class Controller3D implements Controller {
     }
 
     private void prepMat() {
-
         modelMat = new Mat4Identity();
 
-        Vec3D e = new Vec3D(5, 5, 15);
-        double azimuth = Math.toRadians(100);
-        double zenith = Math.toRadians(-15);
+        Vec3D e = new Vec3D(0, 20, 10);
+        double azimuth = Math.toRadians(-100);
+        double zenith = Math.toRadians(-35);
         cam = createCamera(e, azimuth, zenith);
 
         double fov = Math.PI / 3;
@@ -140,7 +139,7 @@ public class Controller3D implements Controller {
                 }
                 if (key == KeyEvent.VK_F){
                     if(switched){
-                        projecMat4 =  new Mat4PerspRH(Math.PI / 3, bf.getImageBuffer().getHeight() / (float) bf.getImageBuffer().getWidth(), 0.5, 30);
+                        projecMat4 =  new Mat4PerspRH(Math.PI / 3, bf.getImageBuffer().getHeight() / (float) bf.getImageBuffer().getWidth(), 0.6, 30);
                     }
                     else{
                         projecMat4 = new Mat4OrthoRH(5, 5, 0.5, 150);
@@ -152,7 +151,7 @@ public class Controller3D implements Controller {
                     filled = !filled;
                 }
                 if(key == KeyEvent.VK_O){
-                    if(activeGeometry + 1 > sceneBuff.size() - 1){
+                    if(activeGeometry + 1 > sceneBuff.size() - 2){
                         return;
                     }
                     else{

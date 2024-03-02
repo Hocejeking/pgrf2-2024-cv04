@@ -37,20 +37,4 @@ public class ObjLoader extends Solid {
         }
     }
 
-    public  void exportToOBJ(String filePath) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            for (int i = 0; i < vertexBuffer.size(); i++) {
-                Vertex vertex = vertexBuffer.get(i);
-                writer.write(String.format("v %f %f %f\n", vertex.getPosition().getX(), vertex.getPosition().getY(), vertex.getPosition().getZ()));
-            }
-
-            for (int i = 0; i < indexBuffer.size(); i += 3) {
-                int v1 = indexBuffer.get(i) + 1;
-                int v2 = indexBuffer.get(i + 1) + 1;
-                int v3 = indexBuffer.get(i + 2) + 1;
-                writer.write(String.format("f %d %d %d\n", v1, v2, v3));
-            }
-        }
-    }
-
 }
