@@ -8,6 +8,8 @@ public class TexShade implements Shader {
     private static TextureLoader texLoader = new TextureLoader();
     @Override
     public Col shade(Vertex v){
-        return texLoader.getCol(v.getTexCoords());
+        int x = (int) (v.getTexCoords().getX()); //width *
+        int y = (int) (v.getTexCoords().getY()); //height *
+        return texLoader.getCol(x,y);
     }
 }

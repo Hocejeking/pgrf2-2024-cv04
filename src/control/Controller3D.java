@@ -45,7 +45,7 @@ public class Controller3D implements Controller {
         sceneBuff.add(new Triangle());
         sceneBuff.add(new TestTriangle());
         sceneBuff.add(new BicubicObject(Cubic.FERGUSON));
-        sceneBuff.add(new ObjLoader("C:\\Users\\Administrator\\IdeaProjects\\pgrf2-2024-cv04\\src\\object.obj"));
+        //sceneBuff.add(new ObjLoader("U:\\grafika-Projekty\\pgrf2-2024-cv04\src\\object.obj"));
         sceneBuff.add(new Axis());
     }
 

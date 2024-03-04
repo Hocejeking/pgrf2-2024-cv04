@@ -6,6 +6,7 @@ import Zbuffer.ZBuffer;
 import transforms.Col;
 import transforms.Point3D;
 import transforms.Vec3D;
+import utils.lerp;
 
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ public class TriangleRasterizer implements Rasterizer {
     private final ZBuffer zb;
     private final InterShade shader = new InterShade();
     private final TexShade texShader = new TexShade();
+    private final lerp LERP;
 
     public void setFilled(boolean filled) {
         this.filled = filled;
@@ -24,6 +26,7 @@ public class TriangleRasterizer implements Rasterizer {
 
     public TriangleRasterizer(ZBuffer zb){
         this.zb = zb;
+        this.LERP = new lerp<Vertex>();
     }
 
     public void rasterize(Vertex a, Vertex b, Vertex c){
